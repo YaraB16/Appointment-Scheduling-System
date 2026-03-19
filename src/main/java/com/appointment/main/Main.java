@@ -1,4 +1,4 @@
-package com.appointment;
+package com.appointment.main;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
