@@ -5,17 +5,15 @@ package com.appointment.Domain;
  * @author team
  * @version 1.0
  */
-public class Administrator {
-    private final String username;
-    private final String password; // Phase 1: plain text (لاحقاً hashing)
 
-    public Administrator(String username, String password) {
-        if (username == null || username.isBlank()) throw new IllegalArgumentException("username required");
-        if (password == null || password.isBlank()) throw new IllegalArgumentException("password required");
-        this.username = username;
-        this.password = password;
+import com.appointment.Domain.UserRole;
+
+/**
+ * Administrator user (inherits from User).
+ */
+public class Administrator extends User {
+
+    public Administrator(String name, String email, String password) {
+        super(name, email, password, UserRole.ADMIN);
     }
-
-    public String getUsername() { return username; }
-    public String getPassword() { return password; }
 }

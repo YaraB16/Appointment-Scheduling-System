@@ -1,8 +1,7 @@
 package com.appointment.Domain;
 
 
-import com.example.appointments.domain.value.TimeSlot;
-
+import com.appointment.Domain.TimeSlot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
