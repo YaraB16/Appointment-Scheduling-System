@@ -5,6 +5,7 @@ import com.appointment.Domain.TimeSlot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Appointment entity.
@@ -18,15 +19,14 @@ public class Appointment {
 
     private AppointmentStatus status;
     private final List<User> participants = new ArrayList<>();
-
-    /**
-     * @param id appointment id
-     * @param slot time slot
-     * @param type appointment type
-     */
-    public Appointment(String id, TimeSlot slot, AppointmentType type) {
-        if (id == null || id.isBlank()) throw new IllegalArgumentException("id required");
-        this.id = id;
+//
+//    /**
+//     * @param id appointment id
+//     * @param slot time slot
+//     * @param type appointment type
+//     */
+    public Appointment(TimeSlot slot, AppointmentType type) {
+        this.id = UUID.randomUUID().toString();
         this.slot = Objects.requireNonNull(slot);
         this.type = Objects.requireNonNull(type);
         this.status = AppointmentStatus.AVAILABLE;
