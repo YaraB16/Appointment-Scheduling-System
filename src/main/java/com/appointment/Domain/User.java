@@ -11,6 +11,7 @@ public class User {
     private final String password;
     private final UserRole role;
 
+
     public User(String name, String email, String password, UserRole role) {
         this.id = UUID.randomUUID().toString();
         this.name = Objects.requireNonNull(name);
