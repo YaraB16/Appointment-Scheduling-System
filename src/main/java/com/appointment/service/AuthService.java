@@ -1,27 +1,24 @@
 package com.appointment.service;
 
+import com.appointment.Domain.Administrator;
 import com.appointment.Domain.User;
+import com.appointment.Repository.AdminRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import static com.appointment.Domain.UserRole.*;
+import java.util.Objects;
 
 public class AuthService {
+    private final AdminRepository adminRepository;
 
-    private List<User> users = new ArrayList<>();
-
-    public AuthService() {
-        users.add(new User("Admin", "admin@mail.com", "1234",ADMIN ));
-        users.add(new User("Yara", "yara@mail.com", "1111", USER));
+    public AuthService(AdminRepository adminRepository) {
+        this.adminRepository = Objects.requireNonNull(adminRepository, "adminRepository");
     }
 
     public User login(String email, String password) {
-        for (User user : users) {
-            if (user.getEmail().equals(email) &&
-                    user.getPassword().equals(password)) {
-                return user;
-            }
-        }
-        return null;
+        if (email == null || password == null) return null;
+
+        Administrator admin = adminRepository.findByEmail(email).orElse(null);
+        if (admin == null) return null;
+
+        return admin.getPassword().equals(password) ? admin : null;
     }
 }

@@ -4,11 +4,7 @@ import com.appointment.Domain.User;
 
 import java.util.Objects;
 
-/**
- * Adapter to use NotificationCenter via NotificationService interface.
- * @author team
- * @version 1.0
- */
+
 public class NotificationCenterAdapter implements NotificationService {
 
     private final NotificationCenter center;
