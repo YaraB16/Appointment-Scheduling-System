@@ -1,5 +1,4 @@
 
-
 import com.appointment.Domain.Appointment;
 import com.appointment.Domain.AppointmentType;
 import com.appointment.service.rules.DurationRule;

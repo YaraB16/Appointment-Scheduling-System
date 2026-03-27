@@ -1,10 +1,8 @@
 
-
 import com.appointment.Domain.User;
 import com.appointment.Repository.InMemoryAdminRepository;
 import com.appointment.service.AuthService;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuthServiceTest {

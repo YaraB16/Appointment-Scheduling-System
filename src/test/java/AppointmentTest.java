@@ -2,7 +2,6 @@
 import com.appointment.Domain.*;
 import com.appointment.value.TimeSlot;
 import org.junit.jupiter.api.Test;
-
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;

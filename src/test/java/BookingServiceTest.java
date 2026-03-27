@@ -1,5 +1,4 @@
 
-
 import com.appointment.Domain.*;
 import com.appointment.Repository.InMemoryAppointmentRepository;
 import com.appointment.service.BookingService;
@@ -7,7 +6,6 @@ import com.appointment.service.rules.DurationRule;
 import com.appointment.service.Notification.FakeNotificationService;
 import com.appointment.value.TimeSlot;
 import org.junit.jupiter.api.Test;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

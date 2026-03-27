@@ -1,5 +1,4 @@
 
-
 import com.appointment.Domain.*;
 import com.appointment.service.rules.ParticipantLimitRule;
 import com.appointment.value.TimeSlot;
