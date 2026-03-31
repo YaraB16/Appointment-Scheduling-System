@@ -34,9 +34,11 @@ public class BookingService {
     }
 
     public Appointment createSlot(TimeSlot slot, AppointmentType type) {
-        Appointment a = new Appointment(slot, type);
-        appointmentRepository.save(a);
-        return a;
+        validateSlot(slot);
+
+        Appointment appointment = new Appointment(slot, type);
+        appointmentRepository.save(appointment);
+        return appointment;
     }
 
     public List<Appointment> listAll() {
@@ -45,59 +47,150 @@ public class BookingService {
 
     public List<Appointment> viewAvailableSlots() {
         List<Appointment> all = appointmentRepository.findAll();
-        List<Appointment> out = new ArrayList<>();
-        for (Appointment a : all) {
-            if (a.getStatus() == AppointmentStatus.AVAILABLE) out.add(a);
+        List<Appointment> available = new ArrayList<>();
+
+        for (Appointment appointment : all) {
+            if (appointment.getStatus() == AppointmentStatus.AVAILABLE) {
+                available.add(appointment);
+            }
         }
-        return out;
+        return available;
     }
 
     public Appointment book(String appointmentId, User user) {
         Objects.requireNonNull(appointmentId, "appointmentId required");
         Objects.requireNonNull(user, "user required");
 
-        Appointment a = appointmentRepository.findById(appointmentId);
-        if (a == null) throw new IllegalArgumentException("Appointment not found: " + appointmentId);
-        if (a.getStatus() != AppointmentStatus.AVAILABLE) throw new IllegalStateException("Slot not available");
+        Appointment appointment = requireAppointment(appointmentId);
 
-        for (BookingRuleStrategy r : rules) {
-            if (!r.isValid(a)) throw new IllegalStateException(r.message());
+        if (appointment.getStatus() != AppointmentStatus.AVAILABLE) {
+            throw new IllegalStateException("Slot not available.");
         }
 
-        a.confirmFor(user);
-        appointmentRepository.save(a);
-        notificationService.send(user, "Your appointment is confirmed: " + a.getId());
-        return a;
+        for (BookingRuleStrategy rule : rules) {
+            if (!rule.isValid(appointment)) {
+                throw new IllegalStateException(rule.message());
+            }
+        }
+
+        appointment.confirmFor(user);
+        appointmentRepository.save(appointment);
+        notificationService.send(user, "Your appointment is confirmed: " + appointment.getId());
+        return appointment;
     }
 
     public void cancelAndMakeAvailable(String appointmentId) {
         Objects.requireNonNull(appointmentId, "appointmentId required");
-        Appointment a = appointmentRepository.findById(appointmentId);
-        if (a == null) throw new IllegalArgumentException("Appointment not found: " + appointmentId);
-        if (a.getStatus() != AppointmentStatus.CONFIRMED) {
-            throw new IllegalStateException("Only CONFIRMED appointments can be cancelled");
+
+        Appointment appointment = requireAppointment(appointmentId);
+
+        if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            throw new IllegalStateException("Only CONFIRMED appointments can be cancelled.");
         }
 
-        User first = a.getParticipants().isEmpty() ? null : a.getParticipants().get(0);
+        User firstParticipant = appointment.getParticipants().isEmpty()
+                ? null
+                : appointment.getParticipants().get(0);
 
-        a.cancel();
-        a.makeAvailableAgain();
-        appointmentRepository.save(a);
+        appointment.cancel();
+        appointment.makeAvailableAgain();
+        appointmentRepository.save(appointment);
 
-        if (first != null) {
-            notificationService.send(first, "Your appointment was cancelled: " + a.getId());
+        if (firstParticipant != null) {
+            notificationService.send(firstParticipant,
+                    "Your appointment was cancelled: " + appointment.getId());
         }
     }
 
     public void cancelFutureOnly(String appointmentId) {
-        Objects.requireNonNull(appointmentId, "appointmentId required");
-        Appointment a = appointmentRepository.findById(appointmentId);
-        if (a == null) throw new IllegalArgumentException("Appointment not found: " + appointmentId);
+        Appointment appointment = requireAppointment(appointmentId);
+        LocalDateTime now = LocalDateTime.now(clock);
+
+        if (!appointment.getSlot().getStart().isAfter(now)) {
+            throw new IllegalStateException("Only future appointments can be cancelled.");
+        }
+
+        cancelAndMakeAvailable(appointmentId);
+    }
+
+    public Appointment modifyFutureAppointment(String appointmentId, TimeSlot newSlot) {
+        Objects.requireNonNull(newSlot, "newSlot required");
+        validateSlot(newSlot);
+
+        Appointment appointment = requireAppointment(appointmentId);
+        LocalDateTime now = LocalDateTime.now(clock);
+
+        if (!appointment.getSlot().getStart().isAfter(now)) {
+            throw new IllegalStateException("Only future appointments can be modified.");
+        }
+
+        appointment.reschedule(newSlot);
+        appointmentRepository.save(appointment);
+        return appointment;
+    }
+
+    public Appointment modifyAsAdmin(String appointmentId, TimeSlot newSlot) {
+        Objects.requireNonNull(newSlot, "newSlot required");
+        validateSlot(newSlot);
+
+        Appointment appointment = requireAppointment(appointmentId);
+        appointment.reschedule(newSlot);
+        appointmentRepository.save(appointment);
+
+        if (!appointment.getParticipants().isEmpty()) {
+            User firstParticipant = appointment.getParticipants().get(0);
+            notificationService.send(firstParticipant,
+                    "Your appointment was updated: " + appointment.getId());
+        }
+
+        return appointment;
+    }
+
+    public int sendRemindersForUpcomingHours(int hours) {
+        if (hours <= 0) {
+            throw new IllegalArgumentException("Hours must be greater than zero.");
+        }
 
         LocalDateTime now = LocalDateTime.now(clock);
-        if (!a.getSlot().getStart().isAfter(now)) {
-            throw new IllegalStateException("Only future appointments can be cancelled");
+        LocalDateTime limit = now.plusHours(hours);
+
+        int count = 0;
+
+        for (Appointment appointment : appointmentRepository.findAll()) {
+            if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+                continue;
+            }
+
+            LocalDateTime start = appointment.getSlot().getStart();
+            boolean withinWindow = !start.isBefore(now) && !start.isAfter(limit);
+
+            if (!withinWindow) {
+                continue;
+            }
+
+            for (User user : appointment.getParticipants()) {
+                notificationService.send(user,
+                        "Reminder: upcoming appointment at " + start + " (" + appointment.getType() + ")");
+                count++;
+            }
         }
-        cancelAndMakeAvailable(appointmentId);
+
+        return count;
+    }
+
+    private Appointment requireAppointment(String appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId);
+        if (appointment == null) {
+            throw new IllegalArgumentException("Appointment not found: " + appointmentId);
+        }
+        return appointment;
+    }
+
+    private void validateSlot(TimeSlot slot) {
+        Objects.requireNonNull(slot, "slot required");
+
+        if (!slot.getEnd().isAfter(slot.getStart())) {
+            throw new IllegalArgumentException("End time must be after start time.");
+        }
     }
 }
