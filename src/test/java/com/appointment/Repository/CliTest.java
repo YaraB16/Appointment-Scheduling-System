@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 class CliTest {
-
     @Test
     void shortId_returnsShortenedId() throws Exception {
         Cli cli = new Cli(mock(AuthService.class), mock(BookingService.class));
