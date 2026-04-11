@@ -36,6 +36,11 @@ public class BookingService {
     public Appointment createSlot(TimeSlot slot, AppointmentType type) {
         validateSlot(slot);
 
+        long minutes = java.time.Duration.between(slot.getStart(), slot.getEnd()).toMinutes();
+        if (minutes > 30) {
+            throw new IllegalArgumentException("Appointment duration must not exceed 30 minutes.");
+        }
+
         Appointment appointment = new Appointment(slot, type);
         appointmentRepository.save(appointment);
         return appointment;

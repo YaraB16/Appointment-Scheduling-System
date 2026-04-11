@@ -9,6 +9,7 @@ import com.appointment.service.BookingService;
 import com.appointment.value.TimeSlot;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
@@ -30,15 +31,73 @@ public class Cli {
         while (true) {
             System.out.println("""
                     
-                    1) List available slots
-                    2) Admin: Create slot
-                    3) Book
-                    4) Cancel future booking
-                    5) Admin login
-                    6) Admin logout
-                    7) Send reminders (demo)
-                    8) Admin: Modify slot
+                    MAIN MENU
+                    1) Continue as User
+                    2) Continue as Admin
                     0) Exit
+                    """);
+            System.out.print("> ");
+            String choice = in.nextLine().trim();
+
+            switch (choice) {
+                case "1" -> runUserMenu(in);
+                case "2" -> runAdminMenu(in);
+                case "0" -> {
+                    System.out.println("Bye.");
+                    return;
+                }
+                default -> System.out.println("Unknown option.");
+            }
+        }
+    }
+
+    private void runUserMenu(Scanner in) {
+        while (true) {
+            System.out.println("""
+                    
+                    USER MENU
+                    1) List available slots
+                    2) Book appointment
+                    3) Cancel future booking
+                    0) Back
+                    """);
+            System.out.print("> ");
+            String choice = in.nextLine().trim();
+
+            try {
+                switch (choice) {
+                    case "1" -> listAvailable();
+                    case "2" -> book(in);
+                    case "3" -> cancel(in);
+                    case "0" -> {
+                        return;
+                    }
+                    default -> System.out.println("Unknown option.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void runAdminMenu(Scanner in) {
+        if (loggedInAdmin == null) {
+            adminLogin(in);
+            if (loggedInAdmin == null) {
+                return;
+            }
+        }
+
+        while (true) {
+            System.out.println("""
+                    
+                    ADMIN MENU
+                    1) List available slots
+                    2) Create slot
+                    3) Modify slot
+                    4) Send reminders
+                    5) Logout
+                    0) Back
                     """);
             System.out.print("> ");
             String choice = in.nextLine().trim();
@@ -47,14 +106,13 @@ public class Cli {
                 switch (choice) {
                     case "1" -> listAvailable();
                     case "2" -> createSlot(in);
-                    case "3" -> book(in);
-                    case "4" -> cancel(in);
-                    case "5" -> adminLogin(in);
-                    case "6" -> adminLogout();
-                    case "7" -> sendReminders(in);
-                    case "8" -> adminModifySlot(in);
+                    case "3" -> adminModifySlot(in);
+                    case "4" -> sendReminders(in);
+                    case "5" -> {
+                        adminLogout();
+                        return;
+                    }
                     case "0" -> {
-                        System.out.println("Bye.");
                         return;
                     }
                     default -> System.out.println("Unknown option.");
@@ -87,14 +145,26 @@ public class Cli {
     private void createSlot(Scanner in) {
         requireAdmin();
 
-        AppointmentType type = readAppointmentType(in);
-        LocalDateTime start = readDateTime(in, "Start (yyyy-MM-ddTHH:mm): ");
-        LocalDateTime end = readDateTime(in, "End (yyyy-MM-ddTHH:mm): ");
 
-        Appointment appointment = bookingService.createSlot(new TimeSlot(start, end), type);
-        System.out.println("Created slot successfully.");
-        System.out.println("Short id: " + shortId(appointment.getId()));
-        System.out.println("Full  id: " + appointment.getId());
+        while (true) {
+            try {
+                AppointmentType type = readAppointmentType(in);
+                System.out.println("Note: Maximum allowed appointment duration is 30 minutes.");
+
+                LocalDateTime start = readDateTime(in, "Start (dd-MM-yyyy HH:mm): ");
+                LocalDateTime end = readDateTime(in, "End (dd-MM-yyyy HH:mm): ");
+
+                Appointment appointment = bookingService.createSlot(new TimeSlot(start, end), type);
+                System.out.println("Created slot successfully.");
+                System.out.println("Short id: " + shortId(appointment.getId()));
+                System.out.println("Full  id: " + appointment.getId());
+                return;
+
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid slot: " + e.getMessage());
+                System.out.println("Please enter the slot again.");
+            }
+        }
     }
 
     private void book(Scanner in) {
@@ -119,7 +189,9 @@ public class Cli {
         Appointment a = bookingService.book(appointmentId, user);
 
         System.out.println("Booked successfully: " + a.getId());
+        System.out.println("A confirmation email/notification will be sent automatically.");
     }
+
     private void cancel(Scanner in) {
         System.out.print("Appointment id to cancel (short or full): ");
         String id = in.nextLine().trim();
@@ -156,6 +228,8 @@ public class Cli {
     }
 
     private void sendReminders(Scanner in) {
+        requireAdmin();
+
         System.out.print("Send reminders for how many upcoming hours? ");
         String raw = in.nextLine().trim();
         int hours;
@@ -177,8 +251,8 @@ public class Cli {
         System.out.print("Appointment id to modify (short or full): ");
         String id = in.nextLine().trim();
 
-        LocalDateTime newStart = readDateTime(in, "New start (yyyy-MM-ddTHH:mm): ");
-        LocalDateTime newEnd = readDateTime(in, "New end (yyyy-MM-ddTHH:mm): ");
+        LocalDateTime newStart = readDateTime(in, "New start (dd-MM-yyyy HH:mm): ");
+        LocalDateTime newEnd = readDateTime(in, "New end (dd-MM-yyyy HH:mm): ");
 
         Appointment updated = bookingService.modifyAsAdmin(id, new TimeSlot(newStart, newEnd));
         System.out.println("Slot modified successfully: " + updated.getId());
@@ -195,14 +269,16 @@ public class Cli {
         }
     }
 
+
     private LocalDateTime readDateTime(Scanner in, String prompt) {
         System.out.print(prompt);
         String raw = in.nextLine().trim();
 
         try {
-            return LocalDateTime.parse(raw);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid date format. Use yyyy-MM-ddTHH:mm");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+            return LocalDateTime.parse(raw, formatter);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid format. Use: dd-MM-yyyy HH:mm (example: 11-04-2026 14:30)");
         }
     }
 
