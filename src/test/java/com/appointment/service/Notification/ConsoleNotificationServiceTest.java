@@ -13,24 +13,25 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConsoleNotificationServiceTest {
 
     @Test
-    void send_printsNotificationMessage() {
+    void send_printsNotificationMessage() throws Exception {
         ConsoleNotificationService service = new ConsoleNotificationService();
-        User user = new User("Reem", "reem@gmail.com", "1234", UserRole.USER);
+        User user = new User("Yara", "yara@gmail.com", "1234", UserRole.USER);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
 
         try {
-            System.setOut(new PrintStream(out));
+            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
             service.send(user, "hello");
         } finally {
             System.setOut(originalOut);
         }
 
         String printed = out.toString(StandardCharsets.UTF_8);
+
         assertTrue(printed.contains("[NOTIFY]"));
-        assertTrue(printed.contains("Reem"));
-        assertTrue(printed.contains("hello"));
+        assertTrue(printed.contains("to=Yara"));
+        assertTrue(printed.contains("msg=hello"));
     }
 
     @Test
@@ -46,23 +47,24 @@ class ConsoleNotificationServiceTest {
     }
 
     @Test
-    void send_treatsNullMessageAsEmptyString() {
+    void send_treatsNullMessageAsEmptyString() throws Exception {
         ConsoleNotificationService service = new ConsoleNotificationService();
-        User user = new User("Reem", "reem@gmail.com", "1234", UserRole.USER);
+        User user = new User("Yara", "yara@gmail.com", "1234", UserRole.USER);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
 
         try {
-            System.setOut(new PrintStream(out));
+            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
             service.send(user, null);
         } finally {
             System.setOut(originalOut);
         }
 
         String printed = out.toString(StandardCharsets.UTF_8);
+
         assertTrue(printed.contains("[NOTIFY]"));
-        assertTrue(printed.contains("Reem"));
+        assertTrue(printed.contains("to=Yara"));
         assertTrue(printed.contains("msg="));
     }
 }

@@ -90,15 +90,16 @@ public class Cli {
 
         while (true) {
             System.out.println("""
-                    
-                    ADMIN MENU
-                    1) List available slots
-                    2) Create slot
-                    3) Modify slot
-                    4) Send reminders
-                    5) Logout
-                    0) Back
-                    """);
+        
+        ADMIN MENU
+        1) List available slots
+        2) Create slot
+        3) Modify slot
+        4) Cancel reservation
+        5) Send reminders
+        6) Logout
+        0) Back
+        """);
             System.out.print("> ");
             String choice = in.nextLine().trim();
 
@@ -107,8 +108,9 @@ public class Cli {
                     case "1" -> listAvailable();
                     case "2" -> createSlot(in);
                     case "3" -> adminModifySlot(in);
-                    case "4" -> sendReminders(in);
-                    case "5" -> {
+                    case "4" -> adminCancelReservation(in);
+                    case "5" -> sendReminders(in);
+                    case "6" -> {
                         adminLogout();
                         return;
                     }
@@ -122,7 +124,21 @@ public class Cli {
             }
         }
     }
+    private void adminCancelReservation(Scanner in) {
+        requireAdmin();
 
+        List<Appointment> allAppointments = bookingService.listAll();
+        if (allAppointments.isEmpty()) {
+            System.out.println("No appointments found yet.");
+            return;
+        }
+
+        System.out.print("Appointment id to cancel (short or full): ");
+        String id = in.nextLine().trim();
+
+        bookingService.cancelAndMakeAvailable(id);
+        System.out.println("Reservation cancelled successfully by admin.");
+    }
     private void listAvailable() {
         List<Appointment> all = bookingService.viewAvailableSlots();
         if (all.isEmpty()) {
@@ -247,7 +263,11 @@ public class Cli {
 
     private void adminModifySlot(Scanner in) {
         requireAdmin();
-
+        List<Appointment> allAppointments = bookingService.listAll();
+        if (allAppointments.isEmpty()) {
+            System.out.println("No appointments found yet.");
+            return;
+        }
         System.out.print("Appointment id to modify (short or full): ");
         String id = in.nextLine().trim();
 

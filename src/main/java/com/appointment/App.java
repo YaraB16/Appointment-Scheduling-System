@@ -19,13 +19,18 @@ import java.time.Duration;
 
 public class App {
     public static void main(String[] args) {
+        String emailUsername = System.getenv("EMAIL_USERNAME");
+        String emailPassword = System.getenv("EMAIL_PASSWORD");
+
+        Cli cli = buildCli(emailUsername, emailPassword);
+        cli.run();
+    }
+
+    static Cli buildCli(String emailUsername, String emailPassword) {
         AppointmentRepository appointmentRepository = new InMemoryAppointmentRepository();
         AdminRepository adminRepository = new InMemoryAdminRepository();
 
         AuthService authService = new AuthService(adminRepository);
-
-        String emailUsername = System.getenv("EMAIL_USERNAME");
-        String emailPassword = System.getenv("EMAIL_PASSWORD");
 
         if (emailUsername == null || emailPassword == null
                 || emailUsername.isBlank() || emailPassword.isBlank()) {
@@ -49,12 +54,10 @@ public class App {
                 Clock.systemDefaultZone()
         );
 
-        // Rules
         bookingService.addRule(new DurationRule(Duration.ofMinutes(30)));
         bookingService.addRule(new ParticipantLimitRule(1));
         bookingService.addRule(new TypeRule());
 
-        Cli cli = new Cli(authService, bookingService);
-        cli.run();
+        return new Cli(authService, bookingService);
     }
 }
