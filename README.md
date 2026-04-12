@@ -31,7 +31,6 @@
 * [Usage](#usage)
 * [Data Structure](#data-structure)
 * [Testing & Quality](#testing--quality)
-* [Future Improvements](#future-improvements)
 * [Authors](#-authors)
 
 ---
