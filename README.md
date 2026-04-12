@@ -22,15 +22,15 @@
 
 ## 📚 Table of Contents
 
-* [About The Project](#about-the-project)
+* [About The Project](#-about-the-project)
 * [Key Features](#-key-features)
 * [What Makes This Project Unique](#-what-makes-this-project-unique)
-* [Architecture](#architecture)
-* [Built With](#built-with)
-* [Getting Started](#getting-started)
-* [Usage](#usage)
-* [Data Structure](#data-structure)
-* [Testing & Quality](#testing--quality)
+* [Architecture](#-architecture)
+* [Built With](#-built-with)
+* [Getting Started](#-getting-started)
+* [Usage](#-usage)
+* [Data Structure](#-data-structure)
+* [Testing & Quality](#-testing--quality)
 * [Authors](#-authors)
 
 ---
