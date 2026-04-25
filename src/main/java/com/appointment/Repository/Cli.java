@@ -62,8 +62,10 @@ public class Cli {
                     0) Back
                     """);
             System.out.print("> ");
+            if (!in.hasNextLine()) {
+                return;
+            }
             String choice = in.nextLine().trim();
-
             try {
                 switch (choice) {
                     case "1" -> listAvailable();
@@ -101,8 +103,11 @@ public class Cli {
         0) Back
         """);
             System.out.print("> ");
-            String choice = in.nextLine().trim();
 
+            if (!in.hasNextLine()) {
+                return;
+            }
+            String choice = in.nextLine().trim();
             try {
                 switch (choice) {
                     case "1" -> listAvailable();
