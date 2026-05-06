@@ -1,0 +1,116 @@
+@startuml
+
+package Domain {
+class User
+class Administrator
+class Appointment
+
+enum UserRole
+enum AppointmentStatus
+enum AppointmentType
+
+Administrator --|> User
+User --> UserRole
+Appointment --> TimeSlot
+Appointment --> AppointmentType
+Appointment --> AppointmentStatus
+Appointment --> User
+}
+
+package Repository {
+interface AdminRepository
+interface AppointmentRepository
+
+class InMemoryAdminRepository
+class InMemoryAppointmentRepository
+class Cli
+
+InMemoryAdminRepository ..|> AdminRepository
+InMemoryAppointmentRepository ..|> AppointmentRepository
+
+Cli --> AuthService
+Cli --> BookingService
+Cli --> User
+Cli --> Appointment
+}
+
+package service {
+class AuthService
+class BookingService
+
+AuthService --> AdminRepository
+AuthService --> User
+
+BookingService --> AppointmentRepository
+BookingService --> NotificationService
+BookingService --> BookingRuleStrategy
+BookingService --> Appointment
+BookingService --> TimeSlot
+BookingService --> User
+}
+
+package "service.rules" {
+interface BookingRuleStrategy
+class DurationRule
+class ParticipantLimitRule
+class TypeRule
+
+DurationRule ..|> BookingRuleStrategy
+ParticipantLimitRule ..|> BookingRuleStrategy
+TypeRule ..|> BookingRuleStrategy
+
+BookingRuleStrategy --> Appointment
+}
+
+package "service.Notification" {
+interface NotificationService
+interface Observer
+interface Subject
+
+class ConsoleNotificationService
+class EmailNotificationService
+class FakeNotificationService
+class NotificationCenter
+class NotificationCenterAdapter
+class SmtpConfig
+
+ConsoleNotificationService ..|> NotificationService
+EmailNotificationService ..|> NotificationService
+FakeNotificationService ..|> NotificationService
+NotificationCenterAdapter ..|> NotificationService
+
+NotificationCenter ..|> Subject
+NotificationCenter --> Observer
+NotificationCenterAdapter --> NotificationCenter
+EmailNotificationService --> SmtpConfig
+
+NotificationService --> User
+Observer --> User
+}
+
+package value {
+class Credentials
+class NotificationMessage
+class TimeSlot
+}
+
+package util {
+class SystemDateTimeProvider
+}
+
+class App
+
+App --> AdminRepository
+App --> AppointmentRepository
+App --> InMemoryAdminRepository
+App --> InMemoryAppointmentRepository
+App --> AuthService
+App --> BookingService
+App --> NotificationService
+App --> SmtpConfig
+App --> Cli
+App --> DurationRule
+App --> ParticipantLimitRule
+App --> TypeRule
+
+@enduml
