@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static java.lang.System.out;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -185,7 +186,7 @@ class CliTest {
 
     private String runCli(AuthService authService, BookingService bookingService, String input) throws Exception {
         InputStream originalIn = System.in;
-        PrintStream originalOut = System.out;
+        PrintStream originalOut = out;
 
         ByteArrayInputStream testIn = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -354,5 +355,57 @@ class CliTest {
         assertTrue(output.contains("No admin is currently logged in."));
 
         logger.removeHandler(handler);
+    }
+    @Test
+    void run_printsUnknownOption_whenMainMenuInputIsInvalid() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        String output = runCli(authService, bookingService,
+                "9\n" +
+                        "0\n");
+
+        assertTrue(output.contains("Unknown option."));
+    }
+    @Test
+    void run_exitsWhenZeroIsEntered() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        String output = runCli(authService, bookingService,
+                "0\n");
+
+        assertTrue(output.contains("Bye."));
+    }
+
+    @Test
+    void run_opensUserMenu() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        String output = runCli(authService, bookingService,
+                "1\n" +
+                        "0\n" +
+                        "0\n");
+
+        assertTrue(output.contains("MAIN MENU"));
+    }
+    @Test
+    void run_opensAdminMenuAndReturnsBack() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        User admin = new User("Admin", "admin@mail.com", "1234", UserRole.ADMIN);
+        when(authService.login("admin@mail.com", "1234")).thenReturn(admin);
+
+        String output = runCli(authService, bookingService,
+                "2\n" +
+                        "admin@mail.com\n" +
+                        "1234\n" +
+                        "0\n" +
+                        "0\n");
+
+        assertTrue(output.contains("Admin logged in"));
+        assertTrue(output.contains("ADMIN MENU"));
     }
 }
