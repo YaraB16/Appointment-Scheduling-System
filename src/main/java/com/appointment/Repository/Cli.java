@@ -10,14 +10,16 @@ import com.appointment.value.TimeSlot;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Cli {
     private final AuthService authService;
     private final BookingService bookingService;
-
+    private static final String UNKNOWN_OPTION_MESSAGE = "Unknown option.";
+    private static final Logger LOGGER = Logger.getLogger(Cli.class.getName());
     private User loggedInAdmin;
 
     public Cli(AuthService authService, BookingService bookingService) {
@@ -29,31 +31,31 @@ public class Cli {
         Scanner in = new Scanner(System.in);
 
         while (true) {
-            System.out.println("""
+            LOGGER.info("""
                     
                     MAIN MENU
                     1) Continue as User
                     2) Continue as Admin
                     0) Exit
                     """);
-            System.out.print("> ");
+            LOGGER.info("> ");
             String choice = in.nextLine().trim();
 
             switch (choice) {
                 case "1" -> runUserMenu(in);
                 case "2" -> runAdminMenu(in);
                 case "0" -> {
-                    System.out.println("Bye.");
+                    LOGGER.info("Bye.");
                     return;
                 }
-                default -> System.out.println("Unknown option.");
+                default -> LOGGER.info(UNKNOWN_OPTION_MESSAGE);
             }
         }
     }
 
     private void runUserMenu(Scanner in) {
         while (true) {
-            System.out.println("""
+            LOGGER.info("""
                     
                     USER MENU
                     1) List available slots
@@ -61,7 +63,7 @@ public class Cli {
                     3) Cancel future booking
                     0) Back
                     """);
-            System.out.print("> ");
+            LOGGER.info("> ");
             if (!in.hasNextLine()) {
                 return;
             }
@@ -74,10 +76,10 @@ public class Cli {
                     case "0" -> {
                         return;
                     }
-                    default -> System.out.println("Unknown option.");
+                    default -> LOGGER.info(UNKNOWN_OPTION_MESSAGE);
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                LOGGER.info("Error: " + e.getMessage());
             }
         }
     }
@@ -91,7 +93,7 @@ public class Cli {
         }
 
         while (true) {
-            System.out.println("""
+            LOGGER.info("""
         
         ADMIN MENU
         1) List available slots
@@ -102,7 +104,7 @@ public class Cli {
         6) Logout
         0) Back
         """);
-            System.out.print("> ");
+            LOGGER.info("> ");
 
             if (!in.hasNextLine()) {
                 return;
@@ -122,10 +124,10 @@ public class Cli {
                     case "0" -> {
                         return;
                     }
-                    default -> System.out.println("Unknown option.");
+                    default -> LOGGER.info(UNKNOWN_OPTION_MESSAGE);
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                LOGGER.info("Error: " + e.getMessage());
             }
         }
     }
@@ -134,31 +136,36 @@ public class Cli {
 
         List<Appointment> allAppointments = bookingService.listAll();
         if (allAppointments.isEmpty()) {
-            System.out.println("No appointments found yet.");
+            LOGGER.info("No appointments found yet.");
             return;
         }
 
-        System.out.print("Appointment id to cancel (short or full): ");
+        LOGGER.info("Appointment id to cancel (short or full): ");
         String id = in.nextLine().trim();
 
         bookingService.cancelAndMakeAvailable(id);
-        System.out.println("Reservation cancelled successfully by admin.");
+        LOGGER.info("Reservation cancelled successfully by admin.");
     }
     private void listAvailable() {
         List<Appointment> all = bookingService.viewAvailableSlots();
         if (all.isEmpty()) {
-            System.out.println("(empty)");
+            LOGGER.info("(empty)");
             return;
         }
 
-        System.out.println("Available slots:");
+        LOGGER.info("Available slots:");
         for (Appointment a : all) {
-            System.out.println(
-                    shortId(a.getId()) + " | fullId=" + a.getId()
-                            + " | type=" + a.getType()
-                            + " | slot=" + a.getSlot()
-                            + " | participants=" + a.getParticipantCount()
-                            + " | status=" + a.getStatus()
+            LOGGER.log(
+                    Level.INFO,
+                    "{0} | fullId={1} | type={2} | slot={3} | participants={4} | status={5}",
+                    new Object[]{
+                            shortId(a.getId()),
+                            a.getId(),
+                            a.getType(),
+                            a.getSlot(),
+                            a.getParticipantCount(),
+                            a.getStatus()
+                    }
             );
         }
     }
@@ -170,20 +177,22 @@ public class Cli {
         while (true) {
             try {
                 AppointmentType type = readAppointmentType(in);
-                System.out.println("Note: Maximum allowed appointment duration is 30 minutes.");
+                LOGGER.info("Note: Maximum allowed appointment duration is 30 minutes.");
 
                 LocalDateTime start = readDateTime(in, "Start (dd-MM-yyyy HH:mm): ");
                 LocalDateTime end = readDateTime(in, "End (dd-MM-yyyy HH:mm): ");
 
                 Appointment appointment = bookingService.createSlot(new TimeSlot(start, end), type);
-                System.out.println("Created slot successfully.");
-                System.out.println("Short id: " + shortId(appointment.getId()));
-                System.out.println("Full  id: " + appointment.getId());
+                LOGGER.info("Created slot successfully.");
+                LOGGER.log(Level.INFO,
+                        "Short id: {0}",
+                        shortId(appointment.getId()));
+                LOGGER.info("Full  id: " + appointment.getId());
                 return;
 
             } catch (IllegalArgumentException e) {
-                System.out.println("Invalid slot: " + e.getMessage());
-                System.out.println("Please enter the slot again.");
+                LOGGER.info("Invalid slot: " + e.getMessage());
+                LOGGER.info("Please enter the slot again.");
             }
         }
     }
@@ -192,99 +201,99 @@ public class Cli {
         List<Appointment> available = bookingService.viewAvailableSlots();
 
         if (available.isEmpty()) {
-            System.out.println("No available appointments.");
+            LOGGER.info("No available appointments.");
             return;
         }
 
-        System.out.print("Choose appointment id: ");
+        LOGGER.info("Choose appointment id: ");
         String appointmentId = in.nextLine().trim();
 
-        System.out.print("User name: ");
+        LOGGER.info("User name: ");
         String name = in.nextLine().trim();
 
-        System.out.print("User email: ");
+        LOGGER.info("User email: ");
         String email = in.nextLine().trim();
 
         User user = new User(name, email, "N/A", UserRole.USER);
 
         Appointment a = bookingService.book(appointmentId, user);
 
-        System.out.println("Booked successfully: " + a.getId());
-        System.out.println("A confirmation email/notification will be sent automatically.");
+        LOGGER.info("Booked successfully: " + a.getId());
+        LOGGER.info("A confirmation email/notification will be sent automatically.");
     }
 
     private void cancel(Scanner in) {
-        System.out.print("Appointment id to cancel (short or full): ");
+        LOGGER.info("Appointment id to cancel (short or full): ");
         String id = in.nextLine().trim();
 
         bookingService.cancelFutureOnly(id);
-        System.out.println("Canceled successfully and slot is available again.");
+        LOGGER.info("Canceled successfully and slot is available again.");
     }
 
     private void adminLogin(Scanner in) {
-        System.out.print("Admin email: ");
+        LOGGER.info("Admin email: ");
         String email = in.nextLine().trim();
 
-        System.out.print("Admin password: ");
+        LOGGER.info("Admin password: ");
         String password = in.nextLine().trim();
 
         User admin = authService.login(email, password);
         if (admin == null) {
-            System.out.println("Invalid credentials.");
+            LOGGER.info("Invalid credentials.");
             return;
         }
 
         loggedInAdmin = admin;
-        System.out.println("Admin logged in: " + admin.getEmail());
+        LOGGER.info("Admin logged in: " + admin.getEmail());
     }
 
     private void adminLogout() {
         if (loggedInAdmin == null) {
-            System.out.println("No admin is currently logged in.");
+            LOGGER.info("No admin is currently logged in.");
             return;
         }
 
-        System.out.println("Admin logged out: " + loggedInAdmin.getEmail());
+        LOGGER.info("Admin logged out: " + loggedInAdmin.getEmail());
         loggedInAdmin = null;
     }
 
     private void sendReminders(Scanner in) {
         requireAdmin();
 
-        System.out.print("Send reminders for how many upcoming hours? ");
+        LOGGER.info("Send reminders for how many upcoming hours? ");
         String raw = in.nextLine().trim();
         int hours;
 
         try {
             hours = Integer.parseInt(raw);
         } catch (NumberFormatException e) {
-            System.out.println("Please enter a valid integer.");
+            LOGGER.info("Please enter a valid integer.");
             return;
         }
 
         int count = bookingService.sendRemindersForUpcomingHours(hours);
-        System.out.println("Reminder messages sent: " + count);
+        LOGGER.log(Level.INFO, "Reminder messages sent: {0}", count);
     }
 
     private void adminModifySlot(Scanner in) {
         requireAdmin();
         List<Appointment> allAppointments = bookingService.listAll();
         if (allAppointments.isEmpty()) {
-            System.out.println("No appointments found yet.");
+            LOGGER.info("No appointments found yet.");
             return;
         }
-        System.out.print("Appointment id to modify (short or full): ");
+        LOGGER.info("Appointment id to modify (short or full): ");
         String id = in.nextLine().trim();
 
         LocalDateTime newStart = readDateTime(in, "New start (dd-MM-yyyy HH:mm): ");
         LocalDateTime newEnd = readDateTime(in, "New end (dd-MM-yyyy HH:mm): ");
 
         Appointment updated = bookingService.modifyAsAdmin(id, new TimeSlot(newStart, newEnd));
-        System.out.println("Slot modified successfully: " + updated.getId());
+        LOGGER.info("Slot modified successfully: " + updated.getId());
     }
 
     private AppointmentType readAppointmentType(Scanner in) {
-        System.out.print("Type (URGENT/FOLLOW_UP/ASSESSMENT/VIRTUAL/IN_PERSON/INDIVIDUAL/GROUP): ");
+        LOGGER.info("Type (URGENT/FOLLOW_UP/ASSESSMENT/VIRTUAL/IN_PERSON/INDIVIDUAL/GROUP): ");
         String raw = in.nextLine().trim().toUpperCase();
 
         try {
@@ -296,7 +305,7 @@ public class Cli {
 
 
     private LocalDateTime readDateTime(Scanner in, String prompt) {
-        System.out.print(prompt);
+        LOGGER.info(prompt);
         String raw = in.nextLine().trim();
 
         try {

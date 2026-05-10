@@ -13,16 +13,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConsoleNotificationServiceTest {
 
     @Test
-    void send_printsNotificationMessage() throws Exception {
+    void send_printsNotificationMessage()  {
         ConsoleNotificationService service = new ConsoleNotificationService();
         User user = new User("Yara", "yara@gmail.com", "1234", UserRole.USER);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
 
-        try {
-            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+        try (PrintStream ps =
+                     new PrintStream(out, true, StandardCharsets.UTF_8)) {
+
+            System.setOut(ps);
+
             service.send(user, "hello");
+
         } finally {
             System.setOut(originalOut);
         }
@@ -54,9 +58,13 @@ class ConsoleNotificationServiceTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
 
-        try {
-            System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
+        try (PrintStream ps =
+                     new PrintStream(out, true, StandardCharsets.UTF_8)) {
+
+            System.setOut(ps);
+
             service.send(user, null);
+
         } finally {
             System.setOut(originalOut);
         }
