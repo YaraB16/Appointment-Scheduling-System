@@ -8,7 +8,10 @@ import com.appointment.service.AuthService;
 import com.appointment.service.BookingService;
 import com.appointment.value.TimeSlot;
 import org.junit.jupiter.api.Test;
-
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -188,16 +191,47 @@ class CliTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintStream testOut = new PrintStream(out, true, StandardCharsets.UTF_8);
 
+        Logger cliLogger = Logger.getLogger(Cli.class.getName());
+        boolean originalUseParentHandlers = cliLogger.getUseParentHandlers();
+        Handler[] originalHandlers = cliLogger.getHandlers();
+
+        Handler testLoggerHandler = new StreamHandler(testOut, new SimpleFormatter()) {
+            @Override
+            public synchronized void publish(java.util.logging.LogRecord record) {
+                super.publish(record);
+                flush();
+            }
+        };
+
         try {
             System.setIn(testIn);
             System.setOut(testOut);
+
+            for (Handler handler : originalHandlers) {
+                cliLogger.removeHandler(handler);
+            }
+
+            cliLogger.setUseParentHandlers(false);
+            cliLogger.addHandler(testLoggerHandler);
 
             Cli cli = new Cli(authService, bookingService);
             cli.run();
 
             testOut.flush();
+            testLoggerHandler.flush();
+
             return out.toString(StandardCharsets.UTF_8);
+
         } finally {
+            cliLogger.removeHandler(testLoggerHandler);
+            testLoggerHandler.close();
+
+            for (Handler handler : originalHandlers) {
+                cliLogger.addHandler(handler);
+            }
+
+            cliLogger.setUseParentHandlers(originalUseParentHandlers);
+
             System.setIn(originalIn);
             System.setOut(originalOut);
         }

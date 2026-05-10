@@ -48,7 +48,7 @@ class TimeSlotTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> new TimeSlot(start, end));
 
-        assertEquals("end must be after start", ex.getMessage());
+        assertEquals("end before start", ex.getMessage());
     }
 
     @Test
