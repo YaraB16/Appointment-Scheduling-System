@@ -171,4 +171,41 @@ class CredentialsTest {
 
         assertNotEquals(c1, c2);
     }
+    @Test
+    void fromPasswordHash_acceptsEmailWithDotsAndDash() {
+        Credentials credentials = Credentials.fromPasswordHash(
+                "user.name-test@test-domain.com",
+                "hash123"
+        );
+
+        assertEquals("user.name-test@test-domain.com", credentials.getEmail());
+    }
+
+    @Test
+    void fromPasswordHash_throwsException_whenEmailMissingDomain() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Credentials.fromPasswordHash("user@", "hash123")
+        );
+
+        assertEquals("invalid email format", ex.getMessage());
+    }
+
+    @Test
+    void fromPasswordHash_throwsException_whenEmailMissingAtSymbol() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Credentials.fromPasswordHash("usertest.com", "hash123")
+        );
+
+        assertEquals("invalid email format", ex.getMessage());
+    }
+
+    @Test
+    void matchesRawPassword_returnsFalse_whenPasswordIsBlank() {
+        Credentials credentials =
+                Credentials.fromRawPassword("user@test.com", "secret123");
+
+        assertFalse(credentials.matchesRawPassword(""));
+    }
 }
