@@ -236,4 +236,123 @@ class CliTest {
             System.setOut(originalOut);
         }
     }
+    @Test
+    void userMenu_invalidChoice_printsUnknownOption() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        String output = runCli(authService, bookingService,
+                "1\n" +   // user menu
+                        "9\n" +   // invalid choice
+                        "0\n" +   // back
+                        "0\n");   // exit
+
+        assertTrue(output.contains("Unknown option."));
+    }
+
+    @Test
+    void sendReminders_invalidNumber_printsValidationMessage() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        User admin = new User("Admin", "admin@mail.com", "1234", UserRole.ADMIN);
+
+        when(authService.login("admin@mail.com", "1234"))
+                .thenReturn(admin);
+
+        String output = runCli(authService, bookingService,
+                "2\n" +
+                        "admin@mail.com\n" +
+                        "1234\n" +
+                        "5\n" +
+                        "abc\n" +   // invalid integer
+                        "6\n" +
+                        "0\n");
+
+        assertTrue(output.contains("Please enter a valid integer."));
+    }
+
+    @Test
+    void createSlot_invalidAppointmentType_printsError() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        User admin = new User("Admin", "admin@mail.com", "1234", UserRole.ADMIN);
+
+        when(authService.login("admin@mail.com", "1234"))
+                .thenReturn(admin);
+
+        String output = runCli(authService, bookingService,
+                "2\n" +
+                        "admin@mail.com\n" +
+                        "1234\n" +
+                        "2\n" +
+                        "WRONG_TYPE\n" +
+                        "URGENT\n" +
+                        "12-04-2026 12:00\n" +
+                        "12-04-2026 12:30\n" +
+                        "6\n" +
+                        "0\n");
+
+        assertTrue(output.contains("Invalid slot: Invalid appointment type."));
+    }
+
+    @Test
+    void adminCancelReservation_whenNoAppointmentsFound_printsMessage() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        User admin = new User("Admin", "admin@mail.com", "1234", UserRole.ADMIN);
+
+        when(authService.login("admin@mail.com", "1234"))
+                .thenReturn(admin);
+
+        when(bookingService.listAll()).thenReturn(List.of());
+
+        String output = runCli(authService, bookingService,
+                "2\n" +
+                        "admin@mail.com\n" +
+                        "1234\n" +
+                        "4\n" +
+                        "6\n" +
+                        "0\n");
+
+        assertTrue(output.contains("No appointments found yet."));
+    }
+
+    @Test
+    void adminLogout_whenNoAdminLoggedIn_printsMessage() throws Exception {
+        AuthService authService = mock(AuthService.class);
+        BookingService bookingService = mock(BookingService.class);
+
+        Cli cli = new Cli(authService, bookingService);
+
+        java.lang.reflect.Method method =
+                Cli.class.getDeclaredMethod("adminLogout");
+
+        method.setAccessible(true);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Handler handler = new StreamHandler(out, new SimpleFormatter()) {
+            @Override
+            public synchronized void publish(java.util.logging.LogRecord record) {
+                super.publish(record);
+                flush();
+            }
+        };
+
+        Logger logger = Logger.getLogger(Cli.class.getName());
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+
+        method.invoke(cli);
+
+        handler.flush();
+
+        String output = out.toString(StandardCharsets.UTF_8);
+
+        assertTrue(output.contains("No admin is currently logged in."));
+
+        logger.removeHandler(handler);
+    }
 }
