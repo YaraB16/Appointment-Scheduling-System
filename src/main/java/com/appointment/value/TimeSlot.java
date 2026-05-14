@@ -4,15 +4,18 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public final class TimeSlot {
-    private final LocalDateTime start;
-    private final LocalDateTime end;
+public record TimeSlot(LocalDateTime start,
+                       LocalDateTime end) {
 
-    public TimeSlot(LocalDateTime start, LocalDateTime end) {
-        if (start == null || end == null) throw new IllegalArgumentException("start/end required");
-        if (!end.isAfter(start)) throw new IllegalArgumentException("end must be after start");
-        this.start = start;
-        this.end = end;
+    public TimeSlot {
+
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("start/end required");
+        }
+
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("end before start");
+        }
     }
 
     public LocalDateTime getStart() { return start; }
@@ -32,15 +35,5 @@ public final class TimeSlot {
         return start + " -> " + end;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TimeSlot other)) return false;
-        return start.equals(other.start) && end.equals(other.end);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(start, end);
-    }
 }

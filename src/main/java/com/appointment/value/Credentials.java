@@ -13,8 +13,7 @@ import java.util.regex.Pattern;
 public final class Credentials {
 
     private static final Pattern EMAIL_PATTERN =
-            Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
-
+            Pattern.compile("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$");
     private final String email;
     private final String passwordHash;
 

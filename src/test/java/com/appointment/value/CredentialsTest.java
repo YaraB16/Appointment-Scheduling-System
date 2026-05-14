@@ -124,4 +124,88 @@ class CredentialsTest {
 
         assertNotEquals(c1, "not credentials");
     }
+    @Test
+    void fromPasswordHash_throwsException_whenEmailIsNull() {
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> Credentials.fromPasswordHash(null, "hashed-value"));
+
+        assertEquals("email", ex.getMessage());
+    }
+
+    @Test
+    void fromPasswordHash_throwsException_whenPasswordHashIsNull() {
+        NullPointerException ex = assertThrows(NullPointerException.class,
+                () -> Credentials.fromPasswordHash("user@test.com", null));
+
+        assertEquals("passwordHash", ex.getMessage());
+    }
+
+    @Test
+    void fromPasswordHash_acceptsEmailWithSubdomain() {
+        Credentials credentials =
+                Credentials.fromPasswordHash("user@mail.test.com", "hashed-value");
+
+        assertEquals("user@mail.test.com", credentials.getEmail());
+    }
+
+    @Test
+    void fromPasswordHash_throwsException_whenEmailHasSpacesInside() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Credentials.fromPasswordHash("user name@test.com", "hashed-value"));
+
+        assertEquals("invalid email format", ex.getMessage());
+    }
+
+    @Test
+    void equals_returnsTrue_whenSameObject() {
+        Credentials credentials =
+                Credentials.fromPasswordHash("user@test.com", "hash-1");
+
+        assertEquals(credentials, credentials);
+    }
+
+    @Test
+    void equals_returnsFalseForDifferentEmail() {
+        Credentials c1 = Credentials.fromPasswordHash("user1@test.com", "same-hash");
+        Credentials c2 = Credentials.fromPasswordHash("user2@test.com", "same-hash");
+
+        assertNotEquals(c1, c2);
+    }
+    @Test
+    void fromPasswordHash_acceptsEmailWithDotsAndDash() {
+        Credentials credentials = Credentials.fromPasswordHash(
+                "user.name-test@test-domain.com",
+                "hash123"
+        );
+
+        assertEquals("user.name-test@test-domain.com", credentials.getEmail());
+    }
+
+    @Test
+    void fromPasswordHash_throwsException_whenEmailMissingDomain() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Credentials.fromPasswordHash("user@", "hash123")
+        );
+
+        assertEquals("invalid email format", ex.getMessage());
+    }
+
+    @Test
+    void fromPasswordHash_throwsException_whenEmailMissingAtSymbol() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Credentials.fromPasswordHash("usertest.com", "hash123")
+        );
+
+        assertEquals("invalid email format", ex.getMessage());
+    }
+
+    @Test
+    void matchesRawPassword_returnsFalse_whenPasswordIsBlank() {
+        Credentials credentials =
+                Credentials.fromRawPassword("user@test.com", "secret123");
+
+        assertFalse(credentials.matchesRawPassword(""));
+    }
 }

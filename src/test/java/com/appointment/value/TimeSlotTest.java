@@ -48,7 +48,7 @@ class TimeSlotTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> new TimeSlot(start, end));
 
-        assertEquals("end must be after start", ex.getMessage());
+        assertEquals("end before start", ex.getMessage());
     }
 
     @Test
@@ -156,5 +156,54 @@ class TimeSlotTest {
         );
 
         assertNotEquals(s1, "not a TimeSlot");
+    }
+    @Test
+    void recordAccessors_returnStartAndEnd() {
+        LocalDateTime start = LocalDateTime.of(2026, 4, 12, 10, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 4, 12, 11, 0);
+
+        TimeSlot slot = new TimeSlot(start, end);
+
+        assertEquals(start, slot.start());
+        assertEquals(end, slot.end());
+    }
+
+    @Test
+    void duration_returnsZero_whenStartEqualsEnd() {
+        LocalDateTime time = LocalDateTime.of(2026, 4, 12, 10, 0);
+
+        TimeSlot slot = new TimeSlot(time, time);
+
+        assertEquals(Duration.ZERO, slot.duration());
+    }
+
+    @Test
+    void overlaps_returnsTrue_whenOtherStartsBeforeAndEndsInsideThisSlot() {
+        TimeSlot s1 = new TimeSlot(
+                LocalDateTime.of(2026, 4, 12, 10, 0),
+                LocalDateTime.of(2026, 4, 12, 12, 0)
+        );
+
+        TimeSlot s2 = new TimeSlot(
+                LocalDateTime.of(2026, 4, 12, 9, 30),
+                LocalDateTime.of(2026, 4, 12, 10, 30)
+        );
+
+        assertTrue(s1.overlaps(s2));
+    }
+
+    @Test
+    void overlaps_returnsFalse_whenOtherEndsAtThisStart() {
+        TimeSlot s1 = new TimeSlot(
+                LocalDateTime.of(2026, 4, 12, 10, 0),
+                LocalDateTime.of(2026, 4, 12, 11, 0)
+        );
+
+        TimeSlot s2 = new TimeSlot(
+                LocalDateTime.of(2026, 4, 12, 9, 0),
+                LocalDateTime.of(2026, 4, 12, 10, 0)
+        );
+
+        assertFalse(s1.overlaps(s2));
     }
 }

@@ -19,10 +19,11 @@
         <mockito.version>5.11.0</mockito.version>
         <jacoco.version>0.8.11</jacoco.version>
 
-        <sonar.organization>YaraB16</sonar.organization>
+        <sonar.organization>yarab16</sonar.organization>
         <sonar.projectKey>YaraB16_Appointment-Scheduling-System</sonar.projectKey>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
+
 
     <dependencies>
         <dependency>

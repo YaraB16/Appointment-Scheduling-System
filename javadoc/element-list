@@ -1,0 +1,9 @@
+unnamed package
+com.appointment
+com.appointment.Domain
+com.appointment.Repository
+com.appointment.service
+com.appointment.service.Notification
+com.appointment.service.rules
+com.appointment.util
+com.appointment.value
